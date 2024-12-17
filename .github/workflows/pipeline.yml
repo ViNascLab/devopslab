@@ -23,10 +23,13 @@ jobs:
           python-version: '3.10'
 
       - name: Install Requirements
-        run:  pip install flask
+        run:  pip install flask flask-wtf pytest pytest-cov
 
       - name: Unit Test
-        run: python -m unittest -v test
+        run: |
+          coverage run --source=app -m pytest test.py
+          coverage report -m
+          coverage xml -i
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v4  #https://github.com/marketplace/actions/official-sonarqube-scan
@@ -94,21 +97,19 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_NOTIFICATIONS_TOKEN }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
+  DAST:
+    needs: Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
 
-
-    DAST:
-            needs: Deploy
-            runs-on: ubuntu-latest
-            permissions:
-              contents: write
-              issues: write
-              pull-requests: write
-        
-            steps:
-              - name: Download do Repositório
-                uses: actions/checkout@v4       # https://github.com/actions/checkout
-            
-              - name: DAST (ZAP Scan)
-                uses: zaproxy/action-full-scan@v0.12.0   #https://github.com/marketplace/actions/zap-full-scan
-                with:
-                  target: 'https://vinasclab-fgxq5tbfwq-ue.a.run.app'
+    steps:
+      - name: Download do Repositório
+        uses: actions/checkout@v4       # https://github.com/actions/checkout
+    
+      - name: DAST (ZAP Scan)
+        uses: zaproxy/action-full-scan@v0.12.0   #https://github.com/marketplace/actions/zap-full-scan
+        with:
+          target: 'https://vinasclab-fgxq5tbfwq-ue.a.run.app'
